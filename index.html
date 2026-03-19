@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AV Inspect — Pereira Wilson</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#274457">
@@ -20,7 +20,7 @@
   --brand-dim:rgba(4,188,242,.1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100dvh;max-width:720px;margin:0 auto;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100dvh;max-width:1100px;margin:0 auto;overscroll-behavior:none}
 .header{background:var(--brand-dark);border-bottom:3px solid var(--brand-light);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .logo img{height:32px;display:block}
 .header-meta{text-align:right}
@@ -139,6 +139,76 @@ input[type="file"]{display:none}
 .modal-bar button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 .modal-bar button.primary{background:#04BCF2;border-color:#04BCF2;color:#111}
 #pdfFrame{width:100%;min-height:80vh;border:none;display:block}
+
+/* ── Responsive: tablet (600px+) ── */
+@media(min-width:600px){
+  .content{padding:24px 28px}
+  .stats-row{gap:12px}
+  .stat-chip{padding:12px 10px}
+  .stat-chip-val{font-size:26px}
+  .stat-chip-label{font-size:11px}
+  .site-photo-grid{grid-template-columns:1fr 1fr 1fr}
+  .export-row{gap:14px}
+  .export-btn{padding:18px 14px;font-size:15px}
+  .page-title{font-size:28px}
+  .btn{padding:13px 26px;font-size:16px}
+  .check-item{padding:15px}
+  .check-label{font-size:15px}
+  .card{padding:22px}
+  .form-group input,.form-group select,.form-group textarea{font-size:16px}
+}
+
+/* ── Responsive: desktop (900px+) ── */
+@media(min-width:900px){
+  body{background:var(--bg)}
+  /* Give the whole app a card-on-background treatment */
+  .header{border-radius:0;position:sticky;top:0}
+  .steps-bar{padding:12px 32px}
+  .content{padding:32px 48px;max-width:860px;margin:0 auto}
+  .bottom-nav{padding:18px 48px;position:sticky;bottom:0}
+  /* Two-column checklist layout on wide screens */
+  #checklistBody{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    column-gap:20px;
+  }
+  /* Category dividers span both columns */
+  #checklistBody .cat-divider{grid-column:1/-1}
+  /* Add-item row spans both columns */
+  #checklistBody .add-item-row{grid-column:1/-1}
+  /* Stats row wider */
+  .stats-row{gap:16px}
+  .stat-chip-val{font-size:28px}
+  /* Info grid 3 columns */
+  .info-grid{grid-template-columns:1fr 1fr 1fr}
+  /* Export card wider with bigger buttons */
+  .export-row{grid-template-columns:1fr 1fr;gap:16px}
+  .export-btn{padding:20px 16px;font-size:15px;flex-direction:column;gap:10px}
+  /* Forms side by side */
+  .form-row{gap:16px}
+  /* Page header */
+  .page-title{font-size:32px}
+  .page-subtitle{font-size:15px}
+  /* Cards */
+  .card{padding:24px 28px;margin-bottom:18px}
+  .defect-form-panel{padding:24px 28px}
+  /* Site photo grid 3-col on desktop */
+  .site-photo-grid{grid-template-columns:1fr 1fr 1fr}
+  /* Checklist items */
+  .check-item{padding:16px}
+  .check-label{font-size:15px}
+  /* Buttons */
+  .btn{padding:14px 28px;font-size:16px}
+  .check-btn{padding:7px 16px;font-size:13px}
+}
+
+/* ── Responsive: large desktop (1100px+) ── */
+@media(min-width:1100px){
+  body{padding:0 24px}
+  .header{max-width:1100px;margin:0 auto;border-radius:0}
+  .content{max-width:920px}
+  .bottom-nav{max-width:1100px;margin:0 auto}
+}
 </style>
 </head>
 <body>
