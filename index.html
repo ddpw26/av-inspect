@@ -505,7 +505,7 @@ function startInspection(){
   };
   // Only reset checklist if type changed or first time
   state.checklist=(CHECKLISTS[state.info.inspectionType]||[]).map(function(x,i){
-    return {id:i, cat:x.cat, item:x.item, status:'pending', note:'', photo:null, custom:false};
+    return {id:i, cat:x.cat, item:x.item, status:'pending', note:'', photo:null, failReason:'', custom:false};
   });
   state._nextId=10000;
   renderChecklist();
@@ -543,14 +543,20 @@ function renderChecklist(){
         +'<button class="check-btn cbtn-fail" onclick="setStatus('+item.id+',\'fail\')">&#10005; Fail</button>'
         +'<button class="check-btn cbtn-na" onclick="setStatus('+item.id+',\'na\')">&mdash; N/A</button>'
         +'<button class="check-btn cbtn-note" onclick="toggleNote('+item.id+')">+ Note</button>'
-        +'<button class="check-btn cbtn-photo" id="cphotobtn'+item.id+'" onclick="openItemPhoto('+item.id+')" style="display:'+(item.status==="fail"?"inline-flex":"none")+'">&#128247; Photo</button>'
+        
         +'</div>'
         +'<div class="check-note-input" id="cnote'+item.id+'" style="display:'+noteVis+'">'
         +'<input type="text" placeholder="Add a note..." value="'+esc(item.note)+'" oninput="setNote('+item.id+',this.value)">'
         +'</div>'
+        +'<div class="item-fail-detail" id="cfaildetail'+item.id+'" style="display:'+(item.status==="fail"?"block":"none")+'">'
+        +'<div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.4px;margin:8px 0 4px">Fail Reason</div>'
+        +'<textarea id="cfailreason'+item.id+'" placeholder="Describe why this item has failed..." oninput="setFailReason('+item.id+',this.value)" style="width:100%;background:var(--surface2);border:1.5px solid var(--red);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;font-family:inherit;outline:none;resize:vertical;min-height:64px;display:block;margin-bottom:8px">'+esc(item.failReason)+'</textarea>'
+        +'<button class="check-btn cbtn-photo" onclick="openItemPhoto('+item.id+')">&#128247; Add Photo</button>'
         +'<div class="item-photo-section" id="cphoto'+item.id+'" style="display:'+(item.photo?'block':'none')+'">'
         +(item.photo?'<div class="photo-preview-wrap"><img src="'+item.photo+'"><button class="photo-remove-btn" onclick="removeItemPhoto('+item.id+')">&#10005;</button></div>':'')
-        +'</div></div>';
+        +'</div>'
+        +'</div>'
+        +'</div>';
     });
     html+='</div>'
       +'<div class="add-item-row" id="addrow_'+safeCat+'" style="display:none">'
@@ -650,7 +656,7 @@ function confirmAddItem(safeCat, catName){
   if(!input)return;
   var val=input.value.trim();
   if(!val){input.focus();return;}
-  var newItem={id:state._nextId++, cat:catName, item:val, status:'pending', note:'', photo:null, custom:true};
+  var newItem={id:state._nextId++, cat:catName, item:val, status:'pending', note:'', photo:null, failReason:'', custom:true};
   state.checklist.push(newItem);
   renderChecklist();
   // Re-show the add row for the same category and scroll to it
@@ -674,14 +680,21 @@ function setStatus(id, status){
   el.className=sc;
   ind.className='check-indicator'+(item.status==='pass'?' ind-pass':item.status==='fail'?' ind-fail':item.status==='na'?' ind-na':'');
   ind.innerHTML=item.status==='pass'?'&#10003;':item.status==='fail'?'&#10005;':item.status==='na'?'&mdash;':'';
-  // Show/hide photo button based on fail status
-  var photobtn=document.getElementById('cphotobtn'+id);
-  if(photobtn) photobtn.style.display=item.status==='fail'?'inline-flex':'none';
-  // If leaving fail state, clear any attached photo
-  if(item.status!=='fail' && item.photo){
-    item.photo=null;
-    var cphotoEl=document.getElementById('cphoto'+id);
-    if(cphotoEl){cphotoEl.style.display='none';cphotoEl.innerHTML='';}
+  // Show/hide the entire fail-detail panel (reason + photo)
+  var failDetailEl=document.getElementById('cfaildetail'+id);
+  if(failDetailEl) failDetailEl.style.display=item.status==='fail'?'block':'none';
+  // If leaving fail state, clear reason and photo
+  if(item.status!=='fail'){
+    if(item.photo){
+      item.photo=null;
+      var cphotoEl=document.getElementById('cphoto'+id);
+      if(cphotoEl){cphotoEl.style.display='none';cphotoEl.innerHTML='';}
+    }
+    if(item.failReason){
+      item.failReason='';
+      var frEl=document.getElementById('cfailreason'+id);
+      if(frEl) frEl.value='';
+    }
   }
   refreshStats();
 }
@@ -695,6 +708,10 @@ function toggleNote(id){
 function setNote(id, val){
   var item=state.checklist.find(function(x){return x.id===id;});
   if(item)item.note=val;
+}
+function setFailReason(id, val){
+  var item=state.checklist.find(function(x){return x.id===id;});
+  if(item)item.failReason=val;
 }
 
 function refreshStats(){
@@ -843,10 +860,16 @@ function buildReportHTML(forPDF){
       +'<td style="width:60pt;text-align:center;color:'+col+';font-weight:700;font-size:8pt">'+icon+'</td>'
       +'<td style="font-size:9pt">'+esc(item.item)+(item.custom?' <span style="font-size:7.5pt;color:#04BCF2">[custom]</span>':'')+'</td>'
       +'<td style="font-size:8.5pt;color:#888;font-style:italic">'+esc(item.note||'')+'</td></tr>';
-    if(item.status==='fail'&&item.photo){
-      clHtml+='<tr style="background:#ffebee"><td colspan="3" style="padding:6px 10px">'
-        +'<img src="'+item.photo+'" style="max-width:100%;max-height:180px;object-fit:contain;border-radius:4px;border:1px solid #f5c6c6;display:block">'
-        +'</td></tr>';
+    if(item.status==='fail'&&(item.failReason||item.photo)){
+      clHtml+='<tr style="background:#fff5f5"><td colspan="3" style="padding:8px 10px">';
+      if(item.failReason){
+        clHtml+='<p style="font-size:8.5pt;font-weight:700;color:#cf222e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Fail Reason</p>'
+          +'<p style="font-size:9pt;margin-bottom:'+(item.photo?'8px':'2px')+'">'+esc(item.failReason)+'</p>';
+      }
+      if(item.photo){
+        clHtml+='<img src="'+item.photo+'" style="max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;border:1px solid #f5c6c6;display:block">';
+      }
+      clHtml+='</td></tr>';
     }
   });
 
@@ -1455,21 +1478,32 @@ async function exportWord(doShare, overrideFilename){
           +'</w:p>'
         +'</w:tc>'
       +'</w:tr>';
-      if(item.status==='fail'&&item.photo){
-        var ipm=item.photo.match(/^data:image\/([^;]+);base64,(.+)$/);
-        if(ipm){
-          var ipExt=ipm[1];var ipRId='rId'+rIdCount++;
-          var ipFn='item_'+item.id+'.'+ipExt;
-          bodyImgRels.push({rId:ipRId,filename:ipFn,ext:ipExt,data:ipm[2]});
-          var ipCx=4536000;var ipCy=Math.round(ipCx*0.75);
-          xml+='<w:tr><w:tc>'
-            +'<w:tcPr><w:gridSpan w:val="3"/><w:shd w:val="clear" w:fill="FFF5F5"/>'
-            +'<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/>'
-            +'<w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar></w:tcPr>'
-            +'<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>'
-            +'<w:r><w:rPr><w:noProof/></w:rPr>'+imgXml(ipRId,ipCx,ipCy)+'</w:r>'
-            +'</w:p></w:tc></w:tr>';
+      if(item.status==='fail'&&(item.failReason||item.photo)){
+        xml+='<w:tr><w:tc>'
+          +'<w:tcPr><w:gridSpan w:val="3"/><w:shd w:val="clear" w:fill="FFF5F5"/>'
+          +'<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/>'
+          +'<w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar></w:tcPr>';
+        if(item.failReason){
+          xml+='<w:p><w:pPr><w:spacing w:before="0" w:after="60"/></w:pPr>'
+            +'<w:r><w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="CF222E"/></w:rPr>'
+              +'<w:t>Fail Reason</w:t></w:r></w:p>'
+            +'<w:p><w:pPr><w:spacing w:before="0" w:after="'+(item.photo?'80':'100')+'"/></w:pPr>'
+            +'<w:r><w:rPr><w:sz w:val="18"/></w:rPr>'
+              +'<w:t>'+xe(item.failReason)+'</w:t></w:r></w:p>';
         }
+        if(item.photo){
+          var ipm=item.photo.match(/^data:image\/([^;]+);base64,(.+)$/);
+          if(ipm){
+            var ipExt=ipm[1];var ipRId='rId'+rIdCount++;
+            var ipFn='item_'+item.id+'.'+ipExt;
+            bodyImgRels.push({rId:ipRId,filename:ipFn,ext:ipExt,data:ipm[2]});
+            var ipCx=4536000;var ipCy=Math.round(ipCx*0.75);
+            xml+='<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>'
+              +'<w:r><w:rPr><w:noProof/></w:rPr>'+imgXml(ipRId,ipCx,ipCy)+'</w:r>'
+              +'</w:p>';
+          }
+        }
+        xml+='</w:tc></w:tr>';
       }
     });
     return xml+'</w:tbl>';
@@ -1625,15 +1659,6 @@ async function exportWord(doShare, overrideFilename){
     }
   }
 
-  var docRelsXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-    +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-    +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'
-    +'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'
-    +'<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>';
-  bodyImgRels.forEach(function(rel){
-    docRelsXml+='<Relationship Id="'+rel.rId+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/'+rel.filename+'"/>';
-  });
-  docRelsXml+='</Relationships>';
 
   var documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     +'<w:document '+NS+'>'
@@ -1656,6 +1681,18 @@ async function exportWord(doShare, overrideFilename){
     +'</w:sectPr>'
     +'</w:body>'
     +'</w:document>';
+
+  // Build docRelsXml AFTER documentXml so all bodyImgRels entries
+  // (defects + site photos + checklist item photos) are present
+  var docRelsXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'
+    +'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'
+    +'<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>';
+  bodyImgRels.forEach(function(rel){
+    docRelsXml+='<Relationship Id="'+rel.rId+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/'+rel.filename+'"/>';
+  });
+  docRelsXml+='</Relationships>';
 
   /* ── assemble zip ── */
   function b64ToBin(b64){
