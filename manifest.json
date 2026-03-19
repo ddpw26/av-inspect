@@ -1,7 +1,7 @@
 {
   "background_color": "#355c75",
   "dir": "ltr",
-  "display": "fullscreen",
+  "display": "standalone",
   "name": "PW AV Inspection Tool",
   "orientation": "any",
   "scope": "/",
