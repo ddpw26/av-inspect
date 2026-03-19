@@ -1,0 +1,13 @@
+{
+  "background_color": "#355c75",
+  "dir": "ltr",
+  "display": "fullscreen",
+  "name": "PW AV Inspection Tool",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "AV Inspector",
+  "start_url": "https://ddpw26.github.io/av-inspect/",
+  "theme_color": "#00a6db",
+  "id": "PW_AV_INSP",
+  "description": "This app is a custom AV Inspection Tool built to support Pereira Wilson"
+}
